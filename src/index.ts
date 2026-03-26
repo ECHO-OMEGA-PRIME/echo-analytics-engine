@@ -118,9 +118,12 @@ function err(message: string, status = 400): Response {
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 function isAuthorized(req: Request, env: Env): boolean {
-  const key = req.headers.get('X-Echo-API-Key') ?? req.headers.get('Authorization')?.replace('Bearer ', '');
-  if (!env.ECHO_API_KEY) return true; // not configured — open in dev
-  return key === env.ECHO_API_KEY;
+  if (!env.ECHO_API_KEY) return false;
+  const apiKey = req.headers.get('X-Echo-API-Key');
+  if (apiKey && apiKey === env.ECHO_API_KEY) return true;
+  const authHeader = req.headers.get('Authorization') || '';
+  if (authHeader.startsWith('Bearer ') && authHeader.slice(7) === env.ECHO_API_KEY) return true;
+  return false;
 }
 
 // ─── Service Fetchers ─────────────────────────────────────────────────────────
