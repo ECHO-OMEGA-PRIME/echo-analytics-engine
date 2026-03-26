@@ -1,0 +1,41 @@
+name = "echo-analytics-engine"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+VERSION = "1.0.0"
+SERVICE_NAME = "echo-analytics-engine"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "echo-analytics-engine"
+database_id = "2f397997-34a0-44bd-aefe-47f463c60817"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "4d5d04f604924c34adf8f0dceb71c86d"
+
+# Service bindings for data sources
+[[services]]
+binding = "ENGINE_RUNTIME"
+service = "echo-engine-runtime"
+
+[[services]]
+binding = "SHARED_BRAIN"
+service = "echo-shared-brain"
+
+[[services]]
+binding = "DOCTRINE_FORGE"
+service = "echo-doctrine-forge"
+
+[[services]]
+binding = "KNOWLEDGE_FORGE"
+service = "echo-knowledge-forge"
+
+[[services]]
+binding = "AUTONOMOUS_DAEMON"
+service = "echo-autonomous-daemon"
+
+[triggers]
+crons = ["0 */6 * * *"]
