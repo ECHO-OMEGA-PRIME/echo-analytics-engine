@@ -39,3 +39,7 @@ service = "echo-autonomous-daemon"
 
 [triggers]
 crons = ["0 */6 * * *"]
+
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "echo_metrics"

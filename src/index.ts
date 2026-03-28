@@ -16,7 +16,7 @@ export interface Env {
   AUTONOMOUS_DAEMON: Fetcher;
   VERSION: string;
   SERVICE_NAME: string;
-  ECHO_API_KEY?: string;
+  ECHO_API_KEY: string;
 }
 
 interface MetricSnapshot {
@@ -128,10 +128,10 @@ function isAuthorized(req: Request, env: Env): boolean {
 
 // ─── Service Fetchers ─────────────────────────────────────────────────────────
 
-async function fetchServiceHealth(binding: Fetcher, path: string, name: string): Promise<Record<string, unknown>> {
+async function fetchServiceHealth(binding: Fetcher, path: string, name: string, apiKey: string): Promise<Record<string, unknown>> {
   try {
     const res = await binding.fetch(`http://internal${path}`, {
-      headers: { 'X-Echo-API-Key': 'echo-omega-prime-forge-x-2026' },
+      headers: { 'X-Echo-API-Key': apiKey },
     });
     if (!res.ok) {
       log('warn', `${name} health non-200`, { status: res.status, path });
@@ -185,11 +185,11 @@ async function collectAllMetrics(env: Env): Promise<CollectedMetrics> {
   log('info', 'collecting metrics from all services');
 
   const [engineData, brainData, doctrineData, knowledgeData, daemonData] = await Promise.all([
-    fetchServiceHealth(env.ENGINE_RUNTIME, '/health', 'engine-runtime'),
-    fetchServiceHealth(env.SHARED_BRAIN, '/health', 'shared-brain'),
-    fetchServiceHealth(env.DOCTRINE_FORGE, '/health', 'doctrine-forge'),
-    fetchServiceHealth(env.KNOWLEDGE_FORGE, '/health', 'knowledge-forge'),
-    fetchServiceHealth(env.AUTONOMOUS_DAEMON, '/status', 'autonomous-daemon'),
+    fetchServiceHealth(env.ENGINE_RUNTIME, '/health', 'engine-runtime', env.ECHO_API_KEY),
+    fetchServiceHealth(env.SHARED_BRAIN, '/health', 'shared-brain', env.ECHO_API_KEY),
+    fetchServiceHealth(env.DOCTRINE_FORGE, '/health', 'doctrine-forge', env.ECHO_API_KEY),
+    fetchServiceHealth(env.KNOWLEDGE_FORGE, '/health', 'knowledge-forge', env.ECHO_API_KEY),
+    fetchServiceHealth(env.AUTONOMOUS_DAEMON, '/status', 'autonomous-daemon', env.ECHO_API_KEY),
   ]);
 
   // Engine Runtime: engines_loaded, total_doctrines, total_queries
