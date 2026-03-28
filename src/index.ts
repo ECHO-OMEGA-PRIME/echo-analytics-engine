@@ -570,6 +570,19 @@ async function handleCron(env: Env): Promise<void> {
   }
 }
 
+// ─── Security Headers ─────────────────────────────────────────────────────────
+
+function addSecurityHeaders(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set('X-Content-Type-Options', 'nosniff');
+  headers.set('X-Frame-Options', 'DENY');
+  headers.set('X-XSS-Protection', '1; mode=block');
+  headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+  headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
 // ─── Router ───────────────────────────────────────────────────────────────────
 
 export default {
@@ -580,7 +593,7 @@ export default {
 
     // OPTIONS preflight
     if (method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: CORS_HEADERS });
+      return addSecurityHeaders(new Response(null, { status: 204, headers: CORS_HEADERS }));
     }
 
     log('info', 'request', { method, path: pathname });
@@ -588,50 +601,50 @@ export default {
     try {
       // GET / — root info
       if (method === 'GET' && (pathname === '/' || pathname === '')) {
-        return json({
+        return addSecurityHeaders(json({
           ok: true,
           service: env.SERVICE_NAME,
           version: env.VERSION,
           endpoints: ['/health', '/dashboard', '/growth', '/metrics/:source', '/snapshot', '/trends'],
           timestamp: new Date().toISOString(),
-        });
+        }));
       }
 
       // GET /health
       if (method === 'GET' && pathname === '/health') {
-        return handleHealth(env);
+        return addSecurityHeaders(await handleHealth(env));
       }
 
       // GET /dashboard
       if (method === 'GET' && pathname === '/dashboard') {
-        return handleDashboard(env);
+        return addSecurityHeaders(await handleDashboard(env));
       }
 
       // GET /growth
       if (method === 'GET' && pathname === '/growth') {
-        return handleGrowth(env, url);
+        return addSecurityHeaders(await handleGrowth(env, url));
       }
 
       // GET /metrics/:source
       const metricsMatch = pathname.match(/^\/metrics\/([^/]+)$/);
       if (method === 'GET' && metricsMatch) {
-        return handleMetricsBySource(env, decodeURIComponent(metricsMatch[1]), url);
+        return addSecurityHeaders(await handleMetricsBySource(env, decodeURIComponent(metricsMatch[1]), url));
       }
 
       // POST /snapshot
       if (method === 'POST' && pathname === '/snapshot') {
-        return handleSnapshot(req, env);
+        return addSecurityHeaders(await handleSnapshot(req, env));
       }
 
       // GET /trends
       if (method === 'GET' && pathname === '/trends') {
-        return handleTrends(env, url);
+        return addSecurityHeaders(await handleTrends(env, url));
       }
 
-      return err('not found', 404);
+      return addSecurityHeaders(err('not found', 404));
     } catch (e) {
       log('error', 'unhandled error', { path: pathname, error: String(e) });
-      return err(`internal error: ${String(e)}`, 500);
+      return addSecurityHeaders(err(`internal error: ${String(e)}`, 500));
     }
   },
 
